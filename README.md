@@ -106,8 +106,5 @@ Implementadas en `utils/validations.ts` mediante `validateResource`:
 ## Uso de inteligencia artificial
 Se utilizó IA como apoyo durante el desarrollo para: generar una estructura inicial de componentes, hooks y tipos; sugerir validaciones para el formulario; ayudar a corregir errores y explicar mensajes de error; y recomendar buenas prácticas para el uso de Local Storage, Session Storage y Cookies. El equipo revisó, comprende y puede explicar la totalidad del código entregado.
 
-## Capturas de pantalla
-_(Agregar aquí capturas de: listado de recursos, formulario con validación, edición, modal de confirmación de borrado, búsqueda/filtros en uso, y modo claro/oscuro.)_
-
 ## Conclusión
 El desarrollo permitió aplicar en la práctica componentes, hooks y los tres mecanismos de almacenamiento del navegador en una aplicación real, reforzando la comprensión de cuándo usar Local Storage, Session Storage o Cookies según la persistencia y el alcance necesarios, además de la importancia de validar datos y organizar el proyecto en una estructura de carpetas clara.
