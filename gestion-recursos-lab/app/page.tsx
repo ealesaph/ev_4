@@ -1,64 +1,143 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Resource } from '@/types/Resource';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useSessionStorage } from '@/hooks/useSessionStorage';
+import Header from '@/components/Header';
+import ResourceForm from '@/components/ResourceForm';
+import ResourceList from '@/components/ResourceList';
+import SearchBar from '@/components/SearchBar';
+import FilterCategory from '@/components/FilterCategory';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 
 export default function Home() {
+  // Local Storage: Datos principales del CRUD
+  const [resources, setResources] = useLocalStorage<Resource[]>('lab_resources', []);
+
+  // Session Storage: Filtros temporales
+  const [searchTerm, setSearchTerm] = useSessionStorage<string>('lab_search', '');
+  const [filterCategory, setFilterCategory] = useSessionStorage<string>('lab_filter_category', '');
+  const [filterStatus, setFilterStatus] = useSessionStorage<string>('lab_filter_status', '');
+
+  // Estado local para el formulario
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  // Estado para el modal de confirmación
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string; name: string }>({
+    isOpen: false,
+    id: '',
+    name: '',
+  });
+
+  // Filtrar recursos
+  const filteredResources = resources.filter((resource) => {
+    const matchSearch = resource.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory = filterCategory === '' || resource.categoria === filterCategory;
+    const matchStatus = filterStatus === '' || resource.estado === filterStatus;
+    return matchSearch && matchCategory && matchStatus;
+  });
+
+  // CRUD Operations
+  const handleCreate = (resource: Resource) => {
+    setResources((prev) => [...prev, resource]);
+    setShowForm(false);
+  };
+
+  const handleUpdate = (updatedResource: Resource) => {
+    setResources((prev) =>
+      prev.map((r) => (r.id === updatedResource.id ? updatedResource : r))
+    );
+    setEditingResource(null);
+    setShowForm(false);
+  };
+
+  const handleDelete = (id: string) => {
+    const resource = resources.find((r) => r.id === id);
+    if (resource) {
+      setDeleteModal({ isOpen: true, id, name: resource.nombre });
+    }
+  };
+
+  const confirmDelete = () => {
+    setResources((prev) => prev.filter((r) => r.id !== deleteModal.id));
+    setDeleteModal({ isOpen: false, id: '', name: '' });
+  };
+
+  const handleEdit = (resource: Resource) => {
+    setEditingResource(resource);
+    setShowForm(true);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingResource(null);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+      <Header resourceCount={resources.length} />
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Botón para mostrar formulario */}
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            ➕ Nuevo Recurso
+          </button>
+        )}
+
+        {/* Formulario */}
+        {showForm && (
+          <div className="mb-6">
+            <ResourceForm
+              resource={editingResource}
+              onSave={editingResource ? handleUpdate : handleCreate}
+              onCancel={handleCancelForm}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+        )}
+
+        {/* Búsqueda y filtros */}
+        <div className="mb-6 space-y-4">
+          <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          <FilterCategory
+            category={filterCategory}
+            onCategoryChange={setFilterCategory}
+            status={filterStatus}
+            onStatusChange={setFilterStatus}
+          />
+          {(filterCategory || filterStatus || searchTerm) && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterCategory('');
+                setFilterStatus('');
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
+
+        {/* Lista de recursos */}
+        <ResourceList
+          resources={filteredResources}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+
+        {/* Modal de confirmación */}
+        <ConfirmDeleteModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, id: '', name: '' })}
+          onConfirm={confirmDelete}
+          resourceName={deleteModal.name}
+        />
       </main>
     </div>
   );
